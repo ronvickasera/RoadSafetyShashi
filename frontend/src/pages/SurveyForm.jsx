@@ -1,860 +1,35 @@
-// import React from "react";
-// import { useState } from "react";
-// import { useNavigate } from "react-router-dom";
-
-// import Header from "../components/Header";
-// import ImageCapture from "../components/ImageCapture";
-
-// import { getCurrentUser } from "../services/authService";
-// import { submitSurvey } from "../services/surveyService";
-
-// function SurveyForm() {
-//   const navigate = useNavigate();
-//   const user = getCurrentUser();
-
-//   const initialFormData = {
-//     zoneName: "",
-//     circleName: "",
-//     wardName: "",
-//     roadName: "",
-//     roadIssue: "",
-//     latitude: "",
-//     longitude: "",
-//     remarks: ""
-//   };
-
-//   const [formData, setFormData] = useState(initialFormData);
-//   const [image, setImage] = useState("");
-//   const [locationLoading, setLocationLoading] = useState(false);
-//   const [submitting, setSubmitting] = useState(false);
-//   const [message, setMessage] = useState("");
-//   const [errorMessage, setErrorMessage] = useState("");
-
-//   function handleChange(event) {
-//     const { name, value } = event.target;
-
-//     setFormData((previous) => ({
-//       ...previous,
-//       [name]: value
-//     }));
-
-//     setErrorMessage("");
-//   }
-
-//   function getCurrentLocation() {
-//     setMessage("");
-//     setErrorMessage("");
-
-//     if (!navigator.geolocation) {
-//       setErrorMessage("Geolocation is not supported by this browser.");
-//       return;
-//     }
-
-//     setLocationLoading(true);
-
-//     navigator.geolocation.getCurrentPosition(
-//       (position) => {
-//         setFormData((previous) => ({
-//           ...previous,
-//           latitude: position.coords.latitude.toFixed(6),
-//           longitude: position.coords.longitude.toFixed(6)
-//         }));
-
-//         setLocationLoading(false);
-//         setMessage("Current location captured successfully.");
-//       },
-//       (error) => {
-//         console.error(error);
-
-//         const messages = {
-//           1: "Location permission was denied. Please allow location access.",
-//           2: "Current location is unavailable. Please try again.",
-//           3: "Location request timed out. Please try again."
-//         };
-
-//         setErrorMessage(
-//           messages[error.code] || "Unable to get current location."
-//         );
-
-//         setLocationLoading(false);
-//       },
-//       {
-//         enableHighAccuracy: true,
-//         timeout: 15000,
-//         maximumAge: 0
-//       }
-//     );
-//   }
-
-//   function validateForm() {
-//     if (!user) {
-//       setErrorMessage("Please login again.");
-//       navigate("/login");
-//       return false;
-//     }
-
-//     if (user.role !== "SURVEYOR") {
-//       setErrorMessage("Only Surveyors can submit surveys.");
-//       return false;
-//     }
-
-//     if (!formData.zoneName.trim()) {
-//       setErrorMessage("Please enter Zone Name.");
-//       return false;
-//     }
-
-//     if (!formData.circleName.trim()) {
-//       setErrorMessage("Please enter Circle Name.");
-//       return false;
-//     }
-
-//     if (!formData.wardName.trim()) {
-//       setErrorMessage("Please enter Ward Name.");
-//       return false;
-//     }
-
-//     if (!formData.roadIssue.trim()) {
-//       setErrorMessage("Please enter the road-related issue.");
-//       return false;
-//     }
-
-//     if (!formData.latitude || !formData.longitude) {
-//       setErrorMessage("Please capture the current location.");
-//       return false;
-//     }
-
-//     const latitude = Number(formData.latitude);
-//     const longitude = Number(formData.longitude);
-
-//     if (!Number.isFinite(latitude) || latitude < -90 || latitude > 90) {
-//       setErrorMessage("Invalid latitude.");
-//       return false;
-//     }
-
-//     if (!Number.isFinite(longitude) || longitude < -180 || longitude > 180) {
-//       setErrorMessage("Invalid longitude.");
-//       return false;
-//     }
-
-//     return true;
-//   }
-
-//   async function handleSubmit(event) {
-//     event.preventDefault();
-
-//     setMessage("");
-//     setErrorMessage("");
-
-//     if (!validateForm()) {
-//       window.scrollTo({ top: 0, behavior: "smooth" });
-//       return;
-//     }
-
-//     try {
-//       setSubmitting(true);
-
-//       await submitSurvey(formData, image);
-
-//       setMessage("Survey submitted successfully.");
-//       setFormData(initialFormData);
-//       setImage("");
-
-//       window.scrollTo({ top: 0, behavior: "smooth" });
-//     } catch (error) {
-//       console.error(error);
-//       setErrorMessage(
-//         error.message || "Unable to submit survey."
-//       );
-//       window.scrollTo({ top: 0, behavior: "smooth" });
-//     } finally {
-//       setSubmitting(false);
-//     }
-//   }
-
-//   function handleReset() {
-//     if (submitting) return;
-
-//     if (!window.confirm("Are you sure you want to clear this survey?")) {
-//       return;
-//     }
-
-//     setFormData(initialFormData);
-//     setImage("");
-//     setMessage("");
-//     setErrorMessage("");
-//   }
-
-//   if (!user) {
-//     return (
-//       <div>
-//         <Header />
-//         <main className="survey-container">
-//           <div className="survey-card">
-//             <h2>Login Required</h2>
-//             <p>Please login as a Surveyor.</p>
-//             <button
-//               className="submit-button"
-//               onClick={() => navigate("/login")}
-//             >
-//               Login
-//             </button>
-//           </div>
-//         </main>
-//       </div>
-//     );
-//   }
-
-//   if (user.role !== "SURVEYOR") {
-//     return (
-//       <div>
-//         <Header />
-//         <main className="survey-container">
-//           <div className="survey-card">
-//             <h2>Access Denied</h2>
-//             <p>Only Surveyors can submit road safety surveys.</p>
-//           </div>
-//         </main>
-//       </div>
-//     );
-//   }
-
-//   return (
-//     <div>
-//       <Header />
-
-//       <main className="survey-container">
-//         <div className="page-heading">
-//           <div>
-//             <h1>Road Safety Survey</h1>
-//             <p>Enter the road-related issue details</p>
-//           </div>
-
-//           <button
-//             type="button"
-//             className="secondary-button"
-//             onClick={() => navigate("/surveyor")}
-//           >
-//             My Surveys
-//           </button>
-//         </div>
-
-//         <div className="user-info-card">
-//           <strong>Surveyor:</strong> {user.name}
-//           <span> | </span>
-//           <strong>Phone:</strong> {user.phone}
-//         </div>
-
-//         {message && (
-//           <div className="success-message">
-//             <span>✅ {message}</span>
-//             <button onClick={() => navigate("/surveyor")}>
-//               View Surveys
-//             </button>
-//           </div>
-//         )}
-
-//         {errorMessage && (
-//           <div className="error-message">
-//             ❌ {errorMessage}
-//           </div>
-//         )}
-
-//         <form className="survey-card" onSubmit={handleSubmit}>
-//           <section>
-//             <h2>1. Administrative Details</h2>
-
-//             <div className="form-grid">
-//               <div className="form-group">
-//                 <label>Zone Name *</label>
-//                 <input
-//                   name="zoneName"
-//                   value={formData.zoneName}
-//                   onChange={handleChange}
-//                   placeholder="Enter zone name"
-//                   required
-//                 />
-//               </div>
-
-//               <div className="form-group">
-//                 <label>Circle Name *</label>
-//                 <input
-//                   name="circleName"
-//                   value={formData.circleName}
-//                   onChange={handleChange}
-//                   placeholder="Enter circle name"
-//                   required
-//                 />
-//               </div>
-
-//               <div className="form-group">
-//                 <label>Ward Name *</label>
-//                 <input
-//                   name="wardName"
-//                   value={formData.wardName}
-//                   onChange={handleChange}
-//                   placeholder="Enter ward name"
-//                   required
-//                 />
-//               </div>
-
-//               <div className="form-group">
-//                 <label>Road Name</label>
-//                 <input
-//                   name="roadName"
-//                   value={formData.roadName}
-//                   onChange={handleChange}
-//                   placeholder="Enter road name"
-//                 />
-//               </div>
-//             </div>
-//           </section>
-
-//           <section>
-//             <h2>2. Road Issue</h2>
-
-//             <div className="form-group">
-//               <label>Road Related Issue *</label>
-//               <textarea
-//                 name="roadIssue"
-//                 value={formData.roadIssue}
-//                 onChange={handleChange}
-//                 placeholder={
-//                   "Enter issues as bullet points:\n• Pothole\n• Damaged road surface\n• Missing road sign"
-//                 }
-//                 rows="7"
-//                 required
-//               />
-//               <small className="help-text">
-//                 Enter each issue on a separate line.
-//               </small>
-//             </div>
-
-//             <div className="bullet-example">
-//               <strong>Example:</strong>
-//               <ul>
-//                 <li>Large pothole near junction</li>
-//                 <li>Damaged road surface</li>
-//                 <li>Missing traffic sign</li>
-//                 <li>Waterlogging observed</li>
-//               </ul>
-//             </div>
-//           </section>
-
-//           <section>
-//             <h2>3. Survey Location</h2>
-
-//             <button
-//               type="button"
-//               className="location-button"
-//               onClick={getCurrentLocation}
-//               disabled={locationLoading || submitting}
-//             >
-//               📍{" "}
-//               {locationLoading
-//                 ? "Getting Location..."
-//                 : "Get Current Location"}
-//             </button>
-
-//             <div className="form-grid">
-//               <div className="form-group">
-//                 <label>Latitude</label>
-//                 <input
-//                   value={formData.latitude}
-//                   placeholder="Latitude"
-//                   readOnly
-//                 />
-//               </div>
-
-//               <div className="form-group">
-//                 <label>Longitude</label>
-//                 <input
-//                   value={formData.longitude}
-//                   placeholder="Longitude"
-//                   readOnly
-//                 />
-//               </div>
-//             </div>
-
-//             {formData.latitude && formData.longitude && (
-//               <div className="coordinates">
-//                 📌 Location captured:
-//                 <strong>
-//                   {" "}
-//                   {formData.latitude}, {formData.longitude}
-//                 </strong>
-//               </div>
-//             )}
-//           </section>
-
-//           <section>
-//             <h2>4. Photograph</h2>
-//             <p className="help-text">
-//               Capture a clear photograph showing the road issue.
-//             </p>
-
-//             <ImageCapture
-//               image={image}
-//               setImage={setImage}
-//             />
-//           </section>
-
-//           <section>
-//             <h2>5. Remarks</h2>
-
-//             <div className="form-group">
-//               <label>Additional Remarks</label>
-//               <textarea
-//                 name="remarks"
-//                 value={formData.remarks}
-//                 onChange={handleChange}
-//                 placeholder="Enter additional remarks"
-//                 rows="4"
-//               />
-//             </div>
-//           </section>
-
-//           <div className="form-actions">
-//             <button
-//               type="button"
-//               className="reset-button"
-//               onClick={handleReset}
-//               disabled={submitting}
-//             >
-//               Reset
-//             </button>
-
-//             <button
-//               type="submit"
-//               className="submit-button"
-//               disabled={submitting}
-//             >
-//               {submitting ? "Submitting..." : "Submit Survey"}
-//             </button>
-//           </div>
-//         </form>
-//       </main>
-//     </div>
-//   );
-// }
-
-// export default SurveyForm;
-
-
-
-// Laltitude , Longitude editable also can get current latitude longitude
-
 import React from "react";
-import { useState, useRef, useEffect } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
 import Header from "../components/Header";
 import ImageCapture from "../components/ImageCapture";
-
 import { getCurrentUser } from "../services/authService";
 import { submitSurvey } from "../services/surveyService";
-
-
-const zones = [
-  "Uppal",
-  "Rajendranagar",
-  "Serilingampally",
-  "LB Nagar",
-  "Malkajgiri",
-  "Shamshabad",
-  "Qutbullapur",
-  "Golconda",
-  "Charminar",
-  "Kukatpally",
-  "Secunderabad",
-  "Khairatabad"
-];
-
-const circles = [
-  "Keesara",
-  "Alwal",
-  "Bowenpally",
-  "Moula Ali",
-  "Malkajgiri",
-  "Ghatkesar",
-  "Kapra",
-  "Nacharam",
-  "Uppal",
-  "Boduppal",
-  "Nagole",
-  "Saroornagar",
-  "LB Nagar",
-  "Hayathnagar",
-  "Adibatla",
-  "Badangpet",
-  "Jalpally",
-  "Shamshabad",
-  "Rajendra Nagar",
-  "Attapur",
-  "Bahadurpura",
-  "Falaknuma",
-  "Chandrayangutta",
-  "Jangammet",
-  "Santosh Nagar",
-  "Yakutpura",
-  "Malakpet",
-  "Charminar",
-  "Moosarambagh",
-  "Goshamahal",
-  "Karwan",
-  "Golconda",
-  "Mehdipatnam",
-  "Masab Tank",
-  "Khairatabad",
-  "Jubilee Hills",
-  "Borabanda",
-  "Yousufguda",
-  "Ameerpet",
-  "Kavadiguda",
-  "Musheerabad",
-  "Amberpet",
-  "Tarnaka",
-  "Mettuguda",
-  "Narsingi",
-  "Patancheruvu",
-  "Ameenpur",
-  "Miyapur",
-  "Serilingampally",
-  "Madhapur",
-  "Allwyn Colony",
-  "Kukatpally",
-  "Moosapet",
-  "Chintal",
-  "Jeedimetla",
-  "Kompally",
-  "Gajularamaram",
-  "Nizampet",
-  "Dundigal",
-  "Medchal"
-];
-
-const wards = [
-  "Keesara",
-  "Chandrapuri Colony",
-  "Jawahar Nagar",
-  "Dammaiguda",
-  "Yapral",
-  "Shamirpet",
-  "Turkapally",
-  "Macha Bollaram",
-  "Temple Alwal",
-  "Venkatapuram",
-  "Bhudevi Nagar",
-  "Kanajiguda",
-  "Monda Market",
-  "Fateh Nagar",
-  "Prakash Nagar",
-  "Old Bowenpally",
-  "Hasmathpet",
-  "Balram Nagar",
-  "Vinayak Nagar",
-  "Moula Ali",
-  "Kakatiya Nagar",
-  "Neredmet",
-  "East Anandbagh",
-  "Mirjalguda",
-  "Goutham Nagar",
-  "Malkajgiri",
-  "Nagaram",
-  "Ghatkesar",
-  "Edulabad",
-  "Pocharam",
-  "Vampuguda",
-  "Kapra",
-  "Dr AS Rao Nagar",
-  "Kushaiguda",
-  "Cherlapally",
-  "Shakthi Sai Nagar",
-  "H.B. Colony",
-  "Mallapur",
-  "Nacharam",
-  "HMT Nagar",
-  "Chilkanagar",
-  "Beerappagadda",
-  "Habsiguda",
-  "Ramanthapur",
-  "Venkat Reddy Nagar",
-  "Uppal",
-  "Medipally",
-  "Peerzadiguda",
-  "Boduppal",
-  "Chengicherla",
-  "Nagole",
-  "Mansoorabad",
-  "GSI",
-  "Lecturers Colony",
-  "Kuntloor",
-  "Pedda Amberpet",
-  "Kothapet",
-  "Chaitanyapuri",
-  "Gaddiannaram",
-  "Saroornagar",
-  "Doctors Colony",
-  "RK Puram",
-  "NTR Nagar",
-  "Lingojiguda",
-  "Champapet",
-  "Kharmanghat",
-  "Bairamalguda",
-  "Hastinapuram",
-  "BN Reddy Nagar",
-  "Vanasthalipuram",
-  "Chintalkunta",
-  "High Court Colony",
-  "Sahebnagar",
-  "Hayathnagar",
-  "Thorrur",
-  "Kongara Kalan",
-  "Adibatla",
-  "Turkayamjal",
-  "Nadargul",
-  "Prashanthi Hills",
-  "Jillelaguda",
-  "Meerpet",
-  "Badangpet",
-  "Balapur",
-  "Shaheen Nagar",
-  "Pahadi Shareef",
-  "Jalpally",
-  "Thukkuguda",
-  "Mankhal",
-  "Shamshabad",
-  "Kothwalguda",
-  "Rajendra Nagar",
-  "Bandlaguda Jagir",
-  "Kismatpur",
-  "Hydershahkote",
-  "Attapur",
-  "Hyderguda",
-  "Suleman Nagar",
-  "Shastripuram",
-  "Katedan",
-  "Mailardevpally",
-  "Doodh Bowli",
-  "Teegal Kunta",
-  "Chandu Lal Baradari",
-  "Ramnasthpura",
-  "Kishanbagh",
-  "Shah Ali Banda",
-  "Falaknuma",
-  "Jahanuma",
-  "Nawab Saheb Kunta",
-  "Bandlaguda",
-  "Noori Nagar",
-  "Barkas",
-  "Kanchanbagh",
-  "Chandrayangutta",
-  "Riyasat Nagar",
-  "Lalitha Bagh",
-  "Jangammet",
-  "Phool Bagh",
-  "Quadri Chaman",
-  "Bhanu Nagar",
-  "Santosh Nagar",
-  "IS SADAN",
-  "Saraswati Nagar",
-  "Gowlipura",
-  "Talab Chanchalam",
-  "Yakutpura",
-  "Dabeerpura",
-  "Rein Bazar",
-  "Madannapet",
-  "Saidabad",
-  "Asmangadh",
-  "Akberbagh",
-  "Chawani",
-  "Purani Haveli",
-  "Pathergatti",
-  "Hari Bowli",
-  "Qazipura",
-  "Ghansi Bazar",
-  "Purana Pul",
-  "Moosarambagh",
-  "Old Malakpet",
-  "MCH Colony",
-  "Kala Dera",
-  "Azampura",
-  "Dattatreya Nagar",
-  "Manghalhat",
-  "Goshamahal",
-  "Begum Bazar",
-  "Jambagh",
-  "Exhibition Grounds",
-  "Langar Houz",
-  "Gudimalkapur",
-  "Karwan",
-  "Tappachabutra",
-  "Ziaguda",
-  "Nizam Colony",
-  "Nanalnagar",
-  "Tolichowki",
-  "Golconda",
-  "Ibrahimbagh",
-  "Shaikpet",
-  "OU Colony",
-  "Asif Nagar",
-  "Padmanabha Nagar",
-  "Mehdipatnam",
-  "Syed Nagar",
-  "Vijayanagar Colony",
-  "Ahmed Nagar",
-  "Shanti Nagar",
-  "Mallepally",
-  "Red Hills",
-  "Gunfoundry",
-  "Irrum Manzil",
-  "Somajiguda",
-  "Khairatabad",
-  "Himayathnagar",
-  "Jubilee Hills",
-  "Venkateshwara Colony",
-  "Banjara Hills",
-  "Film Nagar",
-  "Krishna Nagar",
-  "Rahamath Nagar",
-  "Karmika Nagar",
-  "Rajeev Nagar",
-  "Borabanda",
-  "Erragadda",
-  "Vengal Rao Nagar",
-  "Srinagar Colony",
-  "Yousufguda",
-  "AG Colony",
-  "Begumpet",
-  "Ameerpet",
-  "SR Nagar",
-  "BK Guda",
-  "Sanathnagar",
-  "Gandhi Nagar",
-  "Kavadiguda",
-  "Bakaram",
-  "Bholakpur",
-  "Padmarao Nagar",
-  "Bansilalpet",
-  "Ramgopalpet",
-  "Adikmet",
-  "Bagh Lingampally",
-  "Musheerabad",
-  "Ramnagar",
-  "Bapuji Nagar",
-  "BARKATPURA",
-  "Kachiguda",
-  "Golnaka",
-  "Patel Nagar",
-  "Amberpet",
-  "Bagh Amberpet",
-  "Tilak Nagar",
-  "Nallakunta",
-  "Boudha Nagar",
-  "Tarnaka",
-  "Seethaphalmandi",
-  "Chilkalguda",
-  "Mettuguda",
-  "Lalapet",
-  "North Lalaguda",
-  "Addagutta",
-  "Narsingi",
-  "Kokapet",
-  "Gandipet",
-  "Manikonda",
-  "Neknampur",
-  "Tellapur",
-  "Muthangi",
-  "Patancheruvu",
-  "JP Colony",
-  "Ramachandrapuram (RC Puram)",
-  "Bharathi Nagar",
-  "Beeramguda",
-  "Ameenpur",
-  "Bollaram",
-  "Hafeezpet",
-  "Madeenaguda",
-  "Chanda Nagar",
-  "Deepthisri Nagar",
-  "Miyapur",
-  "Maktha Mahabubpet",
-  "Gachibowli",
-  "Nallagandla",
-  "Serilingampally",
-  "Masjid Banda",
-  "Sri Ram Nagar",
-  "Kondapur",
-  "Anjaiah Nagar",
-  "HITEC City",
-  "Madhapur",
-  "Izzath Nagar",
-  "Matrusri Nagar",
-  "Mayuri Nagar",
-  "Hyder Nagar",
-  "Bhagya Nagar Colony",
-  "Shamshiguda",
-  "Allwyn Colony",
-  "Vivekananda Nagar Colony",
-  "Venkateshwara Nagar",
-  "Kukatpally",
-  "Balaji Nagar",
-  "Vasanth Nagar",
-  "KPHB Colony",
-  "Kaithalapur",
-  "Gayatri Nagar",
-  "Allapur",
-  "Moti Nagar",
-  "Moosapet",
-  "Prashanth Nagar",
-  "Balanagar",
-  "Rodamestri Nagar",
-  "Jagathgiri Gutta",
-  "Ranga Reddy Nagar",
-  "Chintal",
-  "Giri Nagar",
-  "Ganesh Nagar",
-  "Padma Nagar",
-  "Quthbullapur",
-  "Pet Basheerabad",
-  "Kompally",
-  "Doolapally",
-  "Subhash Nagar",
-  "Saibaba Nagar",
-  "Mahadevpuram",
-  "Gajularamaram",
-  "Shapur Nagar",
-  "Suraram",
-  "Nizampet",
-  "Bachupally",
-  "Bhandari Layout",
-  "Pragathi Nagar",
-  "Bahadurpally",
-  "Bowrampet",
-  "Dundigal",
-  "Medchal",
-  "Pudur-Kistapur",
-  "Gundlapochampally"
-];
-
-const TypeofRoad = [
-  "CC(Cement Concrete)",
-  "BT(Bituminous)",
-  "WBM/Gravel",
-];
-
-const TypeofRoadIssue = [
-   "Pot Holes",
-  "Patch Works",
-];
-
+import { computeAllRates, rupee } from "../lib/rates";
+import { locationGroups } from "../lib/locationData";
 
 function SurveyForm() {
   const navigate = useNavigate();
-  const user = getCurrentUser();
 
-  const initialFormData = {
+  const mapRef = useRef(null);
+  const mapContainerRef = useRef(null);
+  const markerRef = useRef(null);
+
+  const [user, setUser] = useState(null);
+  const [image, setImage] = useState(null);
+  const [locationLoading, setLocationLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [message, setMessage] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+
+  const [length, setLength] = useState("");
+  const [width, setWidth] = useState("");
+  const [depth, setDepth] = useState("");
+
+  const [formData, setFormData] = useState({
     zoneName: "",
     circleName: "",
     wardName: "",
@@ -863,113 +38,577 @@ function SurveyForm() {
     latitude: "",
     longitude: "",
     remarks: ""
-  };
+  });
 
-  const [formData, setFormData] = useState(initialFormData);
-  const [image, setImage] = useState("");
-  const [locationLoading, setLocationLoading] = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [message, setMessage] = useState("");
-  const [errorMessage, setErrorMessage] = useState("");
 
-  const mapRef = useRef(null);
-  const mapContainerRef = useRef(null);
-  const markerRef = useRef(null);
+  const selectedZone = locationGroups.find(
+    (zone) => zone.zone === formData.zoneName
+  );
 
+  const availableCircles = selectedZone?.circles || [];
+
+  const selectedCircle = availableCircles.find(
+    (circle) => circle.circle === formData.circleName
+  );
+
+  const availableWards = selectedCircle?.wards || [];
+
+
+
+  // const zones = [
+  //   "Uppal",
+  //   "Rajendranagar",
+  //   "Serilingampally",
+  //   "LB Nagar",
+  //   "Malkajgiri",
+  //   "Shamshabad",
+  //   "Qutbullapur",
+  //   "Golconda",
+  //   "Charminar",
+  //   "Kukatpally",
+  //   "Secunderabad",
+  //   "Khairatabad"
+  // ];
+
+  // const circles = [
+  //   "Keesara",
+  //   "Alwal",
+  //   "Bowenpally",
+  //   "Moula Ali",
+  //   "Malkajgiri",
+  //   "Ghatkesar",
+  //   "Kapra",
+  //   "Nacharam",
+  //   "Uppal",
+  //   "Boduppal",
+  //   "Nagole",
+  //   "Saroornagar",
+  //   "LB Nagar",
+  //   "Hayathnagar",
+  //   "Adibatla",
+  //   "Badangpet",
+  //   "Jalpally",
+  //   "Shamshabad",
+  //   "Rajendra Nagar",
+  //   "Attapur",
+  //   "Bahadurpura",
+  //   "Falaknuma",
+  //   "Chandrayangutta",
+  //   "Jangammet",
+  //   "Santosh Nagar",
+  //   "Yakutpura",
+  //   "Malakpet",
+  //   "Charminar",
+  //   "Moosarambagh",
+  //   "Goshamahal",
+  //   "Karwan",
+  //   "Golconda",
+  //   "Mehdipatnam",
+  //   "Masab Tank",
+  //   "Khairatabad",
+  //   "Jubilee Hills",
+  //   "Borabanda",
+  //   "Yousufguda",
+  //   "Ameerpet",
+  //   "Kavadiguda",
+  //   "Musheerabad",
+  //   "Amberpet",
+  //   "Tarnaka",
+  //   "Mettuguda",
+  //   "Narsingi",
+  //   "Patancheruvu",
+  //   "Ameenpur",
+  //   "Miyapur",
+  //   "Serilingampally",
+  //   "Madhapur",
+  //   "Allwyn Colony",
+  //   "Kukatpally",
+  //   "Moosapet",
+  //   "Chintal",
+  //   "Jeedimetla",
+  //   "Kompally",
+  //   "Gajularamaram",
+  //   "Nizampet",
+  //   "Dundigal",
+  //   "Medchal"
+  // ];
+
+  // const wards = [
+  //   "Keesara",
+  //   "Chandrapuri Colony",
+  //   "Jawahar Nagar",
+  //   "Dammaiguda",
+  //   "Yapral",
+  //   "Shamirpet",
+  //   "Turkapally",
+  //   "Macha Bollaram",
+  //   "Temple Alwal",
+  //   "Venkatapuram",
+  //   "Bhudevi Nagar",
+  //   "Kanajiguda",
+  //   "Monda Market",
+  //   "Fateh Nagar",
+  //   "Prakash Nagar",
+  //   "Old Bowenpally",
+  //   "Hasmathpet",
+  //   "Balram Nagar",
+  //   "Vinayak Nagar",
+  //   "Moula Ali",
+  //   "Kakatiya Nagar",
+  //   "Neredmet",
+  //   "East Anandbagh",
+  //   "Mirjalguda",
+  //   "Goutham Nagar",
+  //   "Malkajgiri",
+  //   "Nagaram",
+  //   "Ghatkesar",
+  //   "Edulabad",
+  //   "Pocharam",
+  //   "Vampuguda",
+  //   "Kapra",
+  //   "Dr AS Rao Nagar",
+  //   "Kushaiguda",
+  //   "Cherlapally",
+  //   "Shakthi Sai Nagar",
+  //   "H.B. Colony",
+  //   "Mallapur",
+  //   "Nacharam",
+  //   "HMT Nagar",
+  //   "Chilkanagar",
+  //   "Beerappagadda",
+  //   "Habsiguda",
+  //   "Ramanthapur",
+  //   "Venkat Reddy Nagar",
+  //   "Uppal",
+  //   "Medipally",
+  //   "Peerzadiguda",
+  //   "Boduppal",
+  //   "Chengicherla",
+  //   "Nagole",
+  //   "Mansoorabad",
+  //   "GSI",
+  //   "Lecturers Colony",
+  //   "Kuntloor",
+  //   "Pedda Amberpet",
+  //   "Kothapet",
+  //   "Chaitanyapuri",
+  //   "Gaddiannaram",
+  //   "Saroornagar",
+  //   "Doctors Colony",
+  //   "RK Puram",
+  //   "NTR Nagar",
+  //   "Lingojiguda",
+  //   "Champapet",
+  //   "Kharmanghat",
+  //   "Bairamalguda",
+  //   "Hastinapuram",
+  //   "BN Reddy Nagar",
+  //   "Vanasthalipuram",
+  //   "Chintalkunta",
+  //   "High Court Colony",
+  //   "Sahebnagar",
+  //   "Hayathnagar",
+  //   "Thorrur",
+  //   "Kongara Kalan",
+  //   "Adibatla",
+  //   "Turkayamjal",
+  //   "Nadargul",
+  //   "Prashanthi Hills",
+  //   "Jillelaguda",
+  //   "Meerpet",
+  //   "Badangpet",
+  //   "Balapur",
+  //   "Shaheen Nagar",
+  //   "Pahadi Shareef",
+  //   "Jalpally",
+  //   "Thukkuguda",
+  //   "Mankhal",
+  //   "Shamshabad",
+  //   "Kothwalguda",
+  //   "Rajendra Nagar",
+  //   "Bandlaguda Jagir",
+  //   "Kismatpur",
+  //   "Hydershahkote",
+  //   "Attapur",
+  //   "Hyderguda",
+  //   "Suleman Nagar",
+  //   "Shastripuram",
+  //   "Katedan",
+  //   "Mailardevpally",
+  //   "Doodh Bowli",
+  //   "Teegal Kunta",
+  //   "Chandu Lal Baradari",
+  //   "Ramnasthpura",
+  //   "Kishanbagh",
+  //   "Shah Ali Banda",
+  //   "Falaknuma",
+  //   "Jahanuma",
+  //   "Nawab Saheb Kunta",
+  //   "Bandlaguda",
+  //   "Noori Nagar",
+  //   "Barkas",
+  //   "Kanchanbagh",
+  //   "Chandrayangutta",
+  //   "Riyasat Nagar",
+  //   "Lalitha Bagh",
+  //   "Jangammet",
+  //   "Phool Bagh",
+  //   "Quadri Chaman",
+  //   "Bhanu Nagar",
+  //   "Santosh Nagar",
+  //   "IS SADAN",
+  //   "Saraswati Nagar",
+  //   "Gowlipura",
+  //   "Talab Chanchalam",
+  //   "Yakutpura",
+  //   "Dabeerpura",
+  //   "Rein Bazar",
+  //   "Madannapet",
+  //   "Saidabad",
+  //   "Asmangadh",
+  //   "Akberbagh",
+  //   "Chawani",
+  //   "Purani Haveli",
+  //   "Pathergatti",
+  //   "Hari Bowli",
+  //   "Qazipura",
+  //   "Ghansi Bazar",
+  //   "Purana Pul",
+  //   "Moosarambagh",
+  //   "Old Malakpet",
+  //   "MCH Colony",
+  //   "Kala Dera",
+  //   "Azampura",
+  //   "Dattatreya Nagar",
+  //   "Manghalhat",
+  //   "Goshamahal",
+  //   "Begum Bazar",
+  //   "Jambagh",
+  //   "Exhibition Grounds",
+  //   "Langar Houz",
+  //   "Gudimalkapur",
+  //   "Karwan",
+  //   "Tappachabutra",
+  //   "Ziaguda",
+  //   "Nizam Colony",
+  //   "Nanalnagar",
+  //   "Tolichowki",
+  //   "Golconda",
+  //   "Ibrahimbagh",
+  //   "Shaikpet",
+  //   "OU Colony",
+  //   "Asif Nagar",
+  //   "Padmanabha Nagar",
+  //   "Mehdipatnam",
+  //   "Syed Nagar",
+  //   "Vijayanagar Colony",
+  //   "Ahmed Nagar",
+  //   "Shanti Nagar",
+  //   "Mallepally",
+  //   "Red Hills",
+  //   "Gunfoundry",
+  //   "Irrum Manzil",
+  //   "Somajiguda",
+  //   "Khairatabad",
+  //   "Himayathnagar",
+  //   "Jubilee Hills",
+  //   "Venkateshwara Colony",
+  //   "Banjara Hills",
+  //   "Film Nagar",
+  //   "Krishna Nagar",
+  //   "Rahamath Nagar",
+  //   "Karmika Nagar",
+  //   "Rajeev Nagar",
+  //   "Borabanda",
+  //   "Erragadda",
+  //   "Vengal Rao Nagar",
+  //   "Srinagar Colony",
+  //   "Yousufguda",
+  //   "AG Colony",
+  //   "Begumpet",
+  //   "Ameerpet",
+  //   "SR Nagar",
+  //   "BK Guda",
+  //   "Sanathnagar",
+  //   "Gandhi Nagar",
+  //   "Kavadiguda",
+  //   "Bakaram",
+  //   "Bholakpur",
+  //   "Padmarao Nagar",
+  //   "Bansilalpet",
+  //   "Ramgopalpet",
+  //   "Adikmet",
+  //   "Bagh Lingampally",
+  //   "Musheerabad",
+  //   "Ramnagar",
+  //   "Bapuji Nagar",
+  //   "BARKATPURA",
+  //   "Kachiguda",
+  //   "Golnaka",
+  //   "Patel Nagar",
+  //   "Amberpet",
+  //   "Bagh Amberpet",
+  //   "Tilak Nagar",
+  //   "Nallakunta",
+  //   "Boudha Nagar",
+  //   "Tarnaka",
+  //   "Seethaphalmandi",
+  //   "Chilkalguda",
+  //   "Mettuguda",
+  //   "Lalapet",
+  //   "North Lalaguda",
+  //   "Addagutta",
+  //   "Narsingi",
+  //   "Kokapet",
+  //   "Gandipet",
+  //   "Manikonda",
+  //   "Neknampur",
+  //   "Tellapur",
+  //   "Muthangi",
+  //   "Patancheruvu",
+  //   "JP Colony",
+  //   "Ramachandrapuram (RC Puram)",
+  //   "Bharathi Nagar",
+  //   "Beeramguda",
+  //   "Ameenpur",
+  //   "Bollaram",
+  //   "Hafeezpet",
+  //   "Madeenaguda",
+  //   "Chanda Nagar",
+  //   "Deepthisri Nagar",
+  //   "Miyapur",
+  //   "Maktha Mahabubpet",
+  //   "Gachibowli",
+  //   "Nallagandla",
+  //   "Serilingampally",
+  //   "Masjid Banda",
+  //   "Sri Ram Nagar",
+  //   "Kondapur",
+  //   "Anjaiah Nagar",
+  //   "HITEC City",
+  //   "Madhapur",
+  //   "Izzath Nagar",
+  //   "Matrusri Nagar",
+  //   "Mayuri Nagar",
+  //   "Hyder Nagar",
+  //   "Bhagya Nagar Colony",
+  //   "Shamshiguda",
+  //   "Allwyn Colony",
+  //   "Vivekananda Nagar Colony",
+  //   "Venkateshwara Nagar",
+  //   "Kukatpally",
+  //   "Balaji Nagar",
+  //   "Vasanth Nagar",
+  //   "KPHB Colony",
+  //   "Kaithalapur",
+  //   "Gayatri Nagar",
+  //   "Allapur",
+  //   "Moti Nagar",
+  //   "Moosapet",
+  //   "Prashanth Nagar",
+  //   "Balanagar",
+  //   "Rodamestri Nagar",
+  //   "Jagathgiri Gutta",
+  //   "Ranga Reddy Nagar",
+  //   "Chintal",
+  //   "Giri Nagar",
+  //   "Ganesh Nagar",
+  //   "Padma Nagar",
+  //   "Quthbullapur",
+  //   "Pet Basheerabad",
+  //   "Kompally",
+  //   "Doolapally",
+  //   "Subhash Nagar",
+  //   "Saibaba Nagar",
+  //   "Mahadevpuram",
+  //   "Gajularamaram",
+  //   "Shapur Nagar",
+  //   "Suraram",
+  //   "Nizampet",
+  //   "Bachupally",
+  //   "Bhandari Layout",
+  //   "Pragathi Nagar",
+  //   "Bahadurpally",
+  //   "Bowrampet",
+  //   "Dundigal",
+  //   "Medchal",
+  //   "Pudur-Kistapur",
+  //   "Gundlapochampally"
+  // ];
+
+
+  const TypeofRoad = [
+    "CC(Cement Concrete)",
+    "BT(Bituminous)",
+    "WBM/Gravel"
+  ];
+
+  const TypeofRoadIssue = [
+    "Pot Holes",
+    "Patch Works"
+  ];
+
+  useEffect(() => {
+    const currentUser = getCurrentUser();
+
+    if (!currentUser) {
+      navigate("/login");
+      return;
+    }
+
+    setUser(currentUser);
+  }, [navigate]);
 
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) {
       return;
     }
 
-    // Default location: Hyderabad
-    const defaultLatitude = 17.385044;
-    const defaultLongitude = 78.486671;
-
     const map = L.map(mapContainerRef.current).setView(
-      [defaultLatitude, defaultLongitude],
+      [17.3850, 78.4867],
       11
     );
 
     L.tileLayer(
       "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
       {
+        maxZoom: 20,
         attribution:
-          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        maxZoom: 19
+          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
       }
     ).addTo(map);
 
+    map.on("click", (event) => {
+      const { lat, lng } = event.latlng;
+
+      setFormData((prev) => ({
+        ...prev,
+        latitude: lat.toFixed(6),
+        longitude: lng.toFixed(6)
+      }));
+
+      if (markerRef.current) {
+        markerRef.current.setLatLng([lat, lng]);
+      } else {
+        markerRef.current = L.marker([lat, lng]).addTo(map);
+      }
+    });
+
     mapRef.current = map;
 
-    // Fix map rendering when container size becomes available
     setTimeout(() => {
       map.invalidateSize();
-    }, 200);
+    }, 300);
 
     return () => {
       map.remove();
       mapRef.current = null;
+      markerRef.current = null;
     };
   }, []);
 
+  useEffect(() => {
+    const lat = parseFloat(formData.latitude);
+    const lng = parseFloat(formData.longitude);
 
-  function handleChange(event) {
-    const { name, value } = event.target;
+    if (
+      !mapRef.current ||
+      !Number.isFinite(lat) ||
+      !Number.isFinite(lng)
+    ) {
+      return;
+    }
 
-    setFormData((previous) => ({
-      ...previous,
+    mapRef.current.setView([lat, lng], 17);
+
+    if (markerRef.current) {
+      markerRef.current.setLatLng([lat, lng]);
+    } else {
+      markerRef.current = L.marker([lat, lng]).addTo(mapRef.current);
+    }
+  }, [formData.latitude, formData.longitude]);
+
+  // const handleChange = (event) => {
+  //   const { name, value } = event.target;
+
+  //   setFormData((prev) => ({
+  //     ...prev,
+  //     [name]: value
+  //   }));
+  // };
+
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+
+    if (name === "zoneName") {
+      setFormData((prev) => ({
+        ...prev,
+        zoneName: value,
+        circleName: "",
+        wardName: ""
+      }));
+
+      return;
+    }
+
+    if (name === "circleName") {
+      setFormData((prev) => ({
+        ...prev,
+        circleName: value,
+        wardName: ""
+      }));
+
+      return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
       [name]: value
     }));
+  };
 
+
+
+  const getCurrentLocation = () => {
+    setLocationLoading(true);
     setErrorMessage("");
-  }
-
-  // ============================================================
-  // GET CURRENT GPS LOCATION
-  // ============================================================
-
-  function getCurrentLocation() {
     setMessage("");
-    setErrorMessage("");
 
     if (!navigator.geolocation) {
       setErrorMessage(
         "Geolocation is not supported by this browser."
       );
+      setLocationLoading(false);
       return;
     }
 
-    setLocationLoading(true);
-
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        setFormData((previous) => ({
-          ...previous,
-          latitude: position.coords.latitude.toFixed(6),
-          longitude: position.coords.longitude.toFixed(6)
+        const latitude = position.coords.latitude;
+        const longitude = position.coords.longitude;
+
+        setFormData((prev) => ({
+          ...prev,
+          latitude: latitude.toFixed(6),
+          longitude: longitude.toFixed(6)
         }));
 
         setLocationLoading(false);
-
-        setMessage(
-          "Current location captured successfully."
-        );
       },
       (error) => {
-        console.error(error);
+        let errorText = "Unable to get current location.";
 
-        const messages = {
-          1: "Location permission was denied. Please allow location access.",
-          2: "Current location is unavailable. Please try again.",
-          3: "Location request timed out. Please try again."
-        };
+        if (error.code === error.PERMISSION_DENIED) {
+          errorText =
+            "Location permission was denied. Please allow location access.";
+        } else if (error.code === error.POSITION_UNAVAILABLE) {
+          errorText = "Current location is unavailable.";
+        } else if (error.code === error.TIMEOUT) {
+          errorText = "Location request timed out.";
+        }
 
-        setErrorMessage(
-          messages[error.code] ||
-          "Unable to get current location."
-        );
-
+        setErrorMessage(errorText);
         setLocationLoading(false);
       },
       {
@@ -978,942 +617,594 @@ function SurveyForm() {
         maximumAge: 0
       }
     );
-  }
+  };
 
+  const rates = useMemo(() => computeAllRates(), []);
 
-  //Show location on map
+  const roadType = formData.roadName;
 
-  function showLocationOnMap() {
-    setMessage("");
-    setErrorMessage("");
+  const roadTypeRateKey = {
+    "BT(Bituminous)": "BT",
+    "CC(Cement Concrete)": "CC",
+    "WBM/Gravel": "WBM"
+  };
 
-    const latitude = Number(formData.latitude);
-    const longitude = Number(formData.longitude);
+  const rateKey = roadTypeRateKey[roadType];
 
-    if (
-      !Number.isFinite(latitude) ||
-      latitude < -90 ||
-      latitude > 90
-    ) {
-      setErrorMessage(
-        "Invalid latitude. Latitude must be between -90 and 90."
-      );
-      return;
-    }
+  const rate = rateKey ? rates?.[rateKey] : null;
+
+  const volume = useMemo(() => {
+    const l = parseFloat(length);
+    const w = parseFloat(width);
+    const d = parseFloat(depth);
 
     if (
-      !Number.isFinite(longitude) ||
-      longitude < -180 ||
-      longitude > 180
+      !Number.isFinite(l) ||
+      !Number.isFinite(w) ||
+      !Number.isFinite(d) ||
+      l <= 0 ||
+      w <= 0 ||
+      d <= 0
     ) {
-      setErrorMessage(
-        "Invalid longitude. Longitude must be between -180 and 180."
-      );
-      return;
+      return 0;
     }
 
-    updateMapLocation(latitude, longitude);
-  }
+    return l * w * (d / 100);
+  }, [length, width, depth]);
 
-  //reusable map function
+  const cost = useMemo(() => {
+    return volume * (rate?.total || 0);
+  }, [volume, rate]);
 
-  function updateMapLocation(latitude, longitude) {
-    if (!mapRef.current) {
-      return;
-    }
-
-    const map = mapRef.current;
-
-    if (markerRef.current) {
-      markerRef.current.remove();
-    }
-
-    const marker = L.marker([
-      latitude,
-      longitude
-    ]).addTo(map);
-
-    marker.bindPopup(
-      `
-      <div>
-        <strong>Survey Location</strong><br/>
-        Latitude: ${latitude.toFixed(6)}<br/>
-        Longitude: ${longitude.toFixed(6)}
-      </div>
-    `
-    ).openPopup();
-
-    markerRef.current = marker;
-
-    map.setView(
-      [latitude, longitude],
-      16,
-      {
-        animate: true
-      }
-    );
-  }
-
-
-  // ============================================================
-  // VALIDATE FORM
-  // ============================================================
-
-  function validateForm() {
-    if (!user) {
-      setErrorMessage("Please login again.");
-      navigate("/login");
+  const validateForm = () => {
+    if (!formData.zoneName) {
+      setErrorMessage("Please select Zone.");
       return false;
     }
 
-    if (user.role !== "SURVEYOR") {
+    if (!formData.circleName) {
+      setErrorMessage("Please select Circle.");
+      return false;
+    }
+
+    if (!formData.wardName) {
+      setErrorMessage("Please select Ward.");
+      return false;
+    }
+
+    if (!formData.roadName) {
+      setErrorMessage("Please select Road Type.");
+      return false;
+    }
+
+    if (!formData.roadIssue) {
+      setErrorMessage("Please select Road Issue.");
+      return false;
+    }
+
+    const lat = parseFloat(formData.latitude);
+    const lng = parseFloat(formData.longitude);
+
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
       setErrorMessage(
-        "Only Surveyors can submit surveys."
+        "Please capture or enter a valid current location."
       );
       return false;
     }
 
-    if (!formData.zoneName.trim()) {
-      setErrorMessage("Please enter Zone Name.");
+    const l = parseFloat(length);
+    const w = parseFloat(width);
+    const d = parseFloat(depth);
+
+    if (!Number.isFinite(l) || l <= 0) {
+      setErrorMessage("Please enter a valid Length.");
       return false;
     }
 
-    if (!formData.circleName.trim()) {
-      setErrorMessage("Please enter Circle Name.");
+    if (!Number.isFinite(w) || w <= 0) {
+      setErrorMessage("Please enter a valid Width.");
       return false;
     }
 
-    if (!formData.wardName.trim()) {
-      setErrorMessage("Please enter Ward Name.");
-      return false;
-    }
-
-    if (!formData.roadIssue.trim()) {
-      setErrorMessage(
-        "Please enter the road-related issue."
-      );
-      return false;
-    }
-
-    // ============================================================
-    // LATITUDE / LONGITUDE VALIDATION
-    // ============================================================
-
-    if (
-      formData.latitude === "" ||
-      formData.longitude === ""
-    ) {
-      setErrorMessage(
-        "Please enter Latitude and Longitude or use Get Current Location."
-      );
-      return false;
-    }
-
-    const latitude = Number(formData.latitude);
-    const longitude = Number(formData.longitude);
-
-    if (
-      !Number.isFinite(latitude) ||
-      latitude < -90 ||
-      latitude > 90
-    ) {
-      setErrorMessage(
-        "Invalid latitude. Latitude must be between -90 and 90."
-      );
-      return false;
-    }
-
-    if (
-      !Number.isFinite(longitude) ||
-      longitude < -180 ||
-      longitude > 180
-    ) {
-      setErrorMessage(
-        "Invalid longitude. Longitude must be between -180 and 180."
-      );
+    if (!Number.isFinite(d) || d <= 0) {
+      setErrorMessage("Please enter a valid Depth.");
       return false;
     }
 
     return true;
-  }
+  };
 
-  // ============================================================
-  // SUBMIT
-  // ============================================================
-
-  async function handleSubmit(event) {
+  const handleSubmit = async (event) => {
     event.preventDefault();
 
     setMessage("");
     setErrorMessage("");
 
     if (!validateForm()) {
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-      });
-
       return;
     }
 
     try {
       setSubmitting(true);
 
-      await submitSurvey(formData, image);
+      const surveyData = {
+        ...formData,
+        length: Number(length),
+        width: Number(width),
+        depth: Number(depth),
+        volume: Number(volume.toFixed(3)),
+        roadType: rateKey,
+        rate: Number((rate?.total || 0).toFixed(2)),
+        estimatedCost: Number(cost.toFixed(2))
+      };
 
-      setMessage(
-        "Survey submitted successfully."
-      );
+      await submitSurvey(surveyData, image);
 
-      setFormData(initialFormData);
-      setImage("");
+      setMessage("Survey submitted successfully.");
 
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth"
+      setFormData({
+        zoneName: "",
+        circleName: "",
+        wardName: "",
+        roadName: "",
+        roadIssue: "",
+        latitude: "",
+        longitude: "",
+        remarks: ""
       });
 
+      setLength("");
+      setWidth("");
+      setDepth("");
+      setImage(null);
+
+      if (markerRef.current && mapRef.current) {
+        mapRef.current.removeLayer(markerRef.current);
+        markerRef.current = null;
+      }
     } catch (error) {
-      console.error(error);
+      console.error("Survey submission error:", error);
 
       setErrorMessage(
-        error.message ||
-        "Unable to submit survey."
+        error?.response?.data?.message ||
+        error?.message ||
+        "Failed to submit survey."
       );
-
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth"
-      });
-
     } finally {
       setSubmitting(false);
     }
-  }
+  };
 
-  // ============================================================
-  // RESET
-  // ============================================================
+  const handleReset = () => {
+    setFormData({
+      zoneName: "",
+      circleName: "",
+      wardName: "",
+      roadName: "",
+      roadIssue: "",
+      latitude: "",
+      longitude: "",
+      remarks: ""
+    });
 
-  function handleReset() {
-    if (submitting) return;
-
-    if (
-      !window.confirm(
-        "Are you sure you want to clear this survey?"
-      )
-    ) {
-      return;
-    }
-
-    setFormData(initialFormData);
-    setImage("");
+    setLength("");
+    setWidth("");
+    setDepth("");
+    setImage(null);
     setMessage("");
     setErrorMessage("");
-  }
 
-  // ============================================================
-  // LOGIN CHECK
-  // ============================================================
+    if (markerRef.current && mapRef.current) {
+      mapRef.current.removeLayer(markerRef.current);
+      markerRef.current = null;
+    }
 
-  if (!user) {
-    return (
-      <div>
-        <Header />
-
-        <main className="survey-container">
-          <div className="survey-card">
-            <h2>Login Required</h2>
-
-            <p>
-              Please login as a Surveyor.
-            </p>
-
-            <button
-              className="submit-button"
-              onClick={() =>
-                navigate("/login")
-              }
-            >
-              Login
-            </button>
-          </div>
-        </main>
-      </div>
-    );
-  }
-
-  // ============================================================
-  // ROLE CHECK
-  // ============================================================
-
-  if (user.role !== "SURVEYOR") {
-    return (
-      <div>
-        <Header />
-
-        <main className="survey-container">
-          <div className="survey-card">
-            <h2>Access Denied</h2>
-
-            <p>
-              Only Surveyors can submit road safety
-              surveys.
-            </p>
-          </div>
-        </main>
-      </div>
-    );
-  }
-
-  // ============================================================
-  // FORM
-  // ============================================================
+    if (mapRef.current) {
+      mapRef.current.setView([17.3850, 78.4867], 11);
+    }
+  };
 
   return (
-    <div>
+    <>
       <Header />
 
-      <main className="survey-container">
+      <div className="survey-page">
+        <div className="survey-container">
 
-        {/* PAGE HEADER */}
-
-        <div className="page-heading">
-          <div>
+          <div className="survey-header">
             <h1>Road Safety Survey</h1>
 
-            <p>
-              Enter the road-related issue details
-            </p>
+            {user && (
+              <div className="user-info">
+                Surveyor:{" "}
+                <strong>
+                  {user.name ||
+                    user.username ||
+                    user.phone ||
+                    "User"}
+                </strong>
+              </div>
+            )}
           </div>
 
-          <button
-            type="button"
-            className="secondary-button"
-            onClick={() =>
-              navigate("/surveyor")
-            }
-          >
-            My Surveys
-          </button>
-        </div>
+          {message && (
+            <div className="success-message">
+              {message}
 
-        {/* USER INFORMATION */}
+              <button
+                onClick={() =>
+                  navigate("/surveyor")
+                }
+              >
+                View Surveys
+              </button>
 
-        <div className="user-info-card">
-          <strong>Surveyor:</strong>{" "}
-          {user.name}
+            </div>
+          )}
 
-          <span> | </span>
+          {errorMessage && (
+            <div className="error-message">
+              {errorMessage}
+            </div>
+          )}
 
-          <strong>Phone:</strong>{" "}
-          {user.phone}
-        </div>
+          <form onSubmit={handleSubmit}>
 
-        {/* SUCCESS MESSAGE */}
+            <div className="section">
+              <h2>Location Details</h2>
 
-        {message && (
-          <div className="success-message">
-            <span>
-              ✅ {message}
-            </span>
-
-            <button
-              onClick={() =>
-                navigate("/surveyor")
-              }
-            >
-              View Surveys
-            </button>
-          </div>
-        )}
-
-        {/* ERROR MESSAGE */}
-
-        {errorMessage && (
-          <div className="error-message">
-            ❌ {errorMessage}
-          </div>
-        )}
-
-        <form
-          className="survey-card"
-          onSubmit={handleSubmit}
-        >
-
-          {/* ================================================= */}
-          {/* 1. ADMINISTRATIVE DETAILS */}
-          {/* ================================================= */}
-
-          <section>
-
-            <h2>
-              1. Administrative Details
-            </h2>
-
-            <div className="form-grid">
-
-              <div className="form-group">
-
-                <label>
-                  Zone Name *
-                </label>
-
-                {/* <input
-                  name="zoneName"
-                  value={formData.zoneName}
-                  onChange={handleChange}
-                  placeholder="Enter zone name"
-                  required
-                /> */}
-
-                <select
-                  name="zoneName"
-                  value={formData.zoneName}
-                  onChange={handleChange}
-                  required
-                >
-                  <option value="">
-                    Select Zone
-                  </option>
-
-                  {zones.map((zone) => (
-                    <option key={zone} value={zone}>
-                      {zone}
-                    </option>
-                  ))}
-
-                </select>
+              <div className="grid3">
 
 
-
-              </div>
-
-              <div className="form-group">
-
-                <label>
-                  Circle Name *
-                </label>
-
-                {/* <input
-                  name="circleName"
-                  value={formData.circleName}
-                  onChange={handleChange}
-                  placeholder="Enter circle name"
-                  required
-                /> */}
-
-                 <select
-                  name="circleName"
-                  value={formData.circleName}
-                  onChange={handleChange}
-                  required
-                >
-                  <option value="">
-                    Select Circle
-                  </option>
-
-                  {circles.map((circle) => (
-                    <option key={circle} value={circle}>
-                      {circle}
-                    </option>
-                  ))}
-
-                </select>
-
-              </div>
-
-              <div className="form-group">
-
-                <label>
-                  Ward Name *
-                </label>
-
-                {/* <input
-                  name="wardName"
-                  value={formData.wardName}
-                  onChange={handleChange}
-                  placeholder="Enter ward name"
-                  required
-                /> */}
-
-                 <select
-                  name="wardName"
-                  value={formData.wardName}
-                  onChange={handleChange}
-                  required
-                >
-                  <option value="">
-                    Select Ward
-                  </option>
-
-                  {wards.map((ward) => (
-                    <option key={ward} value={ward}>
-                      {ward}
-                    </option>
-                  ))}
-
-                </select>
-
-
-              </div>
-
-              <div className="form-group">
-
-                <label>
-                  Type of Road
-                </label>
-
-                {/* <input
-                  name="roadName"
-                  value={formData.roadName}
-                  onChange={handleChange}
-                  placeholder="Enter road name"
-                /> */}
+                <div className="field">
+                  <label>Zone</label>
 
                   <select
-                  name="roadName"
-                  value={formData.roadName}
-                  onChange={handleChange}
-                  required
-                >
-                  <option value="">
-                    Select Road Type
-                  </option>
-
-                  {TypeofRoad.map((typeofroad) => (
-                    <option key={typeofroad} value={typeofroad}>
-                      {typeofroad}
-                    </option>
-                  ))}
-
-                </select>
-
-              </div>
-
-            </div>
-
-          </section>
-
-          {/* ================================================= */}
-          {/* 2.Type of ROAD ISSUE */}
-          {/* ================================================= */}
-
-          <section>
-
-            <h2>
-              2. Type of Road Issue
-            </h2>
-
-            <div className="form-group">
-
-              <label>
-                Road Related Issue *
-              </label>
-
-              {/* <textarea
-                name="roadIssue"
-                value={formData.roadIssue}
-                onChange={handleChange}
-                placeholder={
-                  "Enter issues as bullet points:\n• Pothole\n• Damaged road surface\n• Missing road sign"
-                }
-                rows="7"
-                required
-              />
-
-              <small className="help-text">
-                Enter each issue on a separate line.
-              </small> */}
-
-              <select
-                  name="roadIssue"
-                  value={formData.roadIssue}
-                  onChange={handleChange}
-                  required
-                >
-                  <option value="">
-                    Select Road Issue
-                  </option>
-
-                  {TypeofRoadIssue.map((roadissue) => (
-                    <option key={roadissue} value={roadissue}>
-                      {roadissue}
-                    </option>
-                  ))}
-
-                </select>
-
-
-            </div>
-
-            {/* <div className="bullet-example">
-
-              <strong>
-                Example:
-              </strong>
-
-              <ul>
-                <li>
-                  Large pothole near junction
-                </li>
-
-                <li>
-                  Damaged road surface
-                </li>
-
-                <li>
-                  Missing traffic sign
-                </li>
-
-                <li>
-                  Waterlogging observed
-                </li>
-              </ul>
-
-            </div> */}
-
-          </section>
-
-          {/* ================================================= */}
-          {/* 3. SURVEY LOCATION */}
-          {/* ================================================= */}
-
-          {/* <section>
-
-            <h2>
-              3. Survey Location
-            </h2>
-
-            <p className="help-text">
-              You can either capture your current
-              GPS location or enter the coordinates
-              manually.
-            </p>
-
-          
-            <button
-              type="button"
-              className="location-button"
-              onClick={getCurrentLocation}
-              disabled={
-                locationLoading ||
-                submitting
-              }
-            >
-              📍{" "}
-
-              {locationLoading
-                ? "Getting Location..."
-                : "Get Current Location"}
-            </button>
-
-           
-
-            <div className="form-grid">
-
-             
-
-              <div className="form-group">
-
-                <label>
-                  Latitude *
-                </label>
-
-                <input
-                  type="number"
-                  name="latitude"
-                  value={formData.latitude}
-                  onChange={handleChange}
-                  placeholder="Example: 17.385044"
-                  min="-90"
-                  max="90"
-                  step="any"
-                  required
-                />
-
-                <small className="help-text">
-                  Range: -90 to 90
-                </small>
-
-              </div>
-
-             
-
-              <div className="form-group">
-
-                <label>
-                  Longitude *
-                </label>
-
-                <input
-                  type="number"
-                  name="longitude"
-                  value={formData.longitude}
-                  onChange={handleChange}
-                  placeholder="Example: 78.486671"
-                  min="-180"
-                  max="180"
-                  step="any"
-                  required
-                />
-
-                <small className="help-text">
-                  Range: -180 to 180
-                </small>
-
-              </div>
-
-            </div>
-
-           
-
-            {formData.latitude &&
-              formData.longitude && (
-                <div className="coordinates">
-
-                  📌 Location:
-
-                  <strong>
-                    {" "}
-                    {formData.latitude},{" "}
-                    {formData.longitude}
-                  </strong>
-
-                </div>
-              )}
-
-          </section>   */}
-
-
-          <section>
-
-            <h2>
-              3. Survey Location
-            </h2>
-
-            <p className="help-text">
-              You can either capture your current GPS location
-              or enter the coordinates manually.
-            </p>
-
-            {/* ================================================= */}
-            {/* CURRENT LOCATION BUTTON */}
-            {/* ================================================= */}
-
-            <button
-              type="button"
-              className="location-button"
-              onClick={getCurrentLocation}
-              disabled={
-                locationLoading ||
-                submitting
-              }
-            >
-              📍{" "}
-
-              {locationLoading
-                ? "Getting Location..."
-                : "Get Current Location"}
-            </button>
-
-            <button
-              type="button"
-              className="secondary-button"
-              onClick={showLocationOnMap}
-              disabled={submitting}
-            >
-              🗺️ Show on Map
-            </button>
-
-
-            {/* ================================================= */}
-            {/* LATITUDE / LONGITUDE */}
-            {/* ================================================= */}
-
-            <div className="form-grid">
-
-              {/* LATITUDE */}
-
-              <div className="form-group">
-
-                <label>
-                  Latitude *
-                </label>
-
-                <input
-                  type="number"
-                  name="latitude"
-                  value={formData.latitude}
-                  onChange={handleChange}
-                  placeholder="Example: 17.385044"
-                  min="-90"
-                  max="90"
-                  step="any"
-                  required
-                />
-
-                <small className="help-text">
-                  Range: -90 to 90
-                </small>
-
-              </div>
-
-              {/* LONGITUDE */}
-
-              <div className="form-group">
-
-                <label>
-                  Longitude *
-                </label>
-
-                <input
-                  type="number"
-                  name="longitude"
-                  value={formData.longitude}
-                  onChange={handleChange}
-                  placeholder="Example: 78.486671"
-                  min="-180"
-                  max="180"
-                  step="any"
-                  required
-                />
-
-                <small className="help-text">
-                  Range: -180 to 180
-                </small>
-
-              </div>
-
-            </div>
-
-            {/* ================================================= */}
-            {/* COORDINATE DISPLAY */}
-            {/* ================================================= */}
-
-            {formData.latitude &&
-              formData.longitude && (
-
-                <div className="coordinates">
-
-                  📌 Location:
-
-                  <strong>
-                    {" "}
-                    {formData.latitude},{" "}
-                    {formData.longitude}
-                  </strong>
-
+                    name="zoneName"
+                    value={formData.zoneName}
+                    onChange={handleChange}
+                    required
+                  >
+                    <option value="">Select Zone</option>
+
+                    {locationGroups.map((zone) => (
+                      <option
+                        key={zone.zone}
+                        value={zone.zone}
+                      >
+                        {zone.zone}
+                      </option>
+                    ))}
+                  </select>
                 </div>
 
-              )}
+                <div className="field">
+                  <label>Circle</label>
 
-            {/* ================================================= */}
-            {/* LEAFLET MAP */}
-            {/* ================================================= */}
+                  <select
+                    name="circleName"
+                    value={formData.circleName}
+                    onChange={handleChange}
+                    disabled={!formData.zoneName}
+                    required
+                  >
+                    <option value="">
+                      {formData.zoneName
+                        ? "Select Circle"
+                        : "Select Zone First"}
+                    </option>
 
-            <div className="form-group">
+                    {availableCircles.map((circle) => (
+                      <option
+                        key={circle.circle}
+                        value={circle.circle}
+                      >
+                        {circle.circle}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-              <label>
-                Survey Location Map
-              </label>
+                <div className="field">
+                  <label>Ward</label>
+
+                  <select
+                    name="wardName"
+                    value={formData.wardName}
+                    onChange={handleChange}
+                    disabled={!formData.circleName}
+                    required
+                  >
+                    <option value="">
+                      {formData.circleName
+                        ? "Select Ward"
+                        : "Select Circle First"}
+                    </option>
+
+                    {availableWards.map((ward) => (
+                      <option
+                        key={ward}
+                        value={ward}
+                      >
+                        {ward}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+              </div>
+            </div>
+
+            <div className="section">
+              <h2>Road Details</h2>
+
+              <div className="grid3">
+
+                <div className="field">
+                  <label>Road Type</label>
+
+                  <select
+                    name="roadName"
+                    value={formData.roadName}
+                    onChange={handleChange}
+                    required
+                  >
+                    <option value="">
+                      Select Road Type
+                    </option>
+
+                    {TypeofRoad.map((typeofroad) => (
+                      <option
+                        key={typeofroad}
+                        value={typeofroad}
+                      >
+                        {typeofroad}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="field">
+                  <label>Road Issue</label>
+
+                  <select
+                    name="roadIssue"
+                    value={formData.roadIssue}
+                    onChange={handleChange}
+                    required
+                  >
+                    <option value="">
+                      Select Road Issue
+                    </option>
+
+                    {TypeofRoadIssue.map((issue) => (
+                      <option
+                        key={issue}
+                        value={issue}
+                      >
+                        {issue}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+              </div>
+            </div>
+
+            <div className="section">
+              <h2>Survey Location</h2>
+
+              <div className="grid3">
+
+                <div className="field">
+                  <label>Latitude</label>
+
+                  <input
+                    type="number"
+                    step="any"
+                    name="latitude"
+                    value={formData.latitude}
+                    onChange={handleChange}
+                    placeholder="Latitude"
+                  />
+                </div>
+
+                <div className="field">
+                  <label>Longitude</label>
+
+                  <input
+                    type="number"
+                    step="any"
+                    name="longitude"
+                    value={formData.longitude}
+                    onChange={handleChange}
+                    placeholder="Longitude"
+                  />
+                </div>
+
+                <div className="field">
+                  <label>Current Location</label>
+
+                  <button
+                    type="button"
+                    className="location-button"
+                    onClick={getCurrentLocation}
+                    disabled={locationLoading}
+                  >
+                    {locationLoading
+                      ? "Getting Location..."
+                      : "📍 Get Current Location"}
+                  </button>
+                </div>
+
+              </div>
 
               <div
                 ref={mapContainerRef}
-                className="survey-location-map"
+                className="survey-map"
+                style={{
+                  width: "100%",
+                  height: "350px",
+                  marginTop: "15px"
+                }}
               />
+            </div>
 
-              <small className="help-text">
-                The marker shows the latitude and longitude
-                entered above.
-              </small>
+            <div className="section">
+              <h2>Road Quantity</h2>
+
+              <div className="grid3">
+
+                <div className="field">
+                  <label>Length (m)</label>
+
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    value={length}
+                    onChange={(event) =>
+                      setLength(event.target.value)
+                    }
+                    placeholder="Enter length"
+                  />
+                </div>
+
+                <div className="field">
+                  <label>Width (m)</label>
+
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    value={width}
+                    onChange={(event) =>
+                      setWidth(event.target.value)
+                    }
+                    placeholder="Enter width"
+                  />
+                </div>
+
+                <div className="field">
+                  <label>Depth (cm)</label>
+
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.5"
+                    value={depth}
+                    onChange={(event) =>
+                      setDepth(event.target.value)
+                    }
+                    placeholder="Enter depth"
+                  />
+                </div>
+
+              </div>
+            </div>
+
+            <div className="section">
+              <h2>Rate & Cost Calculation</h2>
+
+              <div className="breakdown">
+
+                <div className="row">
+                  <span>Road Type</span>
+
+                  <span className="mono">
+                    {roadType || "Not selected"}
+                  </span>
+                </div>
+
+                <div className="row">
+                  <span>Rate Type</span>
+
+                  <span className="mono">
+                    {rateKey || "Not selected"}
+                  </span>
+                </div>
+
+                <div className="row">
+                  <span>Volume</span>
+
+                  <span className="mono">
+                    {volume.toFixed(3)} m³
+                  </span>
+                </div>
+
+                <div className="row">
+                  <span>Rate</span>
+
+                  <span className="mono">
+                    {rate
+                      ? `${rupee(rate.total)}/m³`
+                      : "₹0/m³"}
+                  </span>
+                </div>
+
+                <div className="row total">
+                  <span>Estimated Cost</span>
+
+                  <span className="mono">
+                    {rupee(cost)}
+                  </span>
+                </div>
+
+              </div>
+            </div>
+
+            <div className="section">
+              <h2>Photo</h2>
+
+              <ImageCapture
+                image={image}
+                setImage={setImage}
+              />
+            </div>
+
+            <div className="section">
+              <h2>Remarks</h2>
+
+              <div className="field">
+                <textarea
+                  name="remarks"
+                  value={formData.remarks}
+                  onChange={handleChange}
+                  rows="4"
+                  placeholder="Enter remarks"
+                />
+              </div>
+            </div>
+
+            <div className="form-actions">
+
+              <button
+                type="button"
+                className="reset-button"
+                onClick={handleReset}
+                disabled={submitting}
+              >
+                Reset
+              </button>
+
+              <button
+                type="submit"
+                className="submit-button"
+                disabled={submitting}
+              >
+                {submitting
+                  ? "Submitting..."
+                  : "Submit Survey"}
+              </button>
 
             </div>
 
-          </section>
-
-          {/* ================================================= */}
-          {/* 4. PHOTOGRAPH */}
-          {/* ================================================= */}
-
-          <section>
-
-            <h2>
-              4. Photograph
-            </h2>
-
-            <p className="help-text">
-              Capture a clear photograph showing
-              the road issue.
-            </p>
-
-            <ImageCapture
-              image={image}
-              setImage={setImage}
-            />
-
-          </section>
-
-          {/* ================================================= */}
-          {/* 5. REMARKS */}
-          {/* ================================================= */}
-
-          <section>
-
-            <h2>
-              5. Remarks
-            </h2>
-
-            <div className="form-group">
-
-              <label>
-                Additional Remarks
-              </label>
-
-              <textarea
-                name="remarks"
-                value={formData.remarks}
-                onChange={handleChange}
-                placeholder="Enter additional remarks"
-                rows="4"
-              />
-
-            </div>
-
-          </section>
-
-          {/* ================================================= */}
-          {/* FORM ACTIONS */}
-          {/* ================================================= */}
-
-          <div className="form-actions">
-
-            <button
-              type="button"
-              className="reset-button"
-              onClick={handleReset}
-              disabled={submitting}
-            >
-              Reset
-            </button>
-
-            <button
-              type="submit"
-              className="submit-button"
-              disabled={submitting}
-            >
-              {submitting
-                ? "Submitting..."
-                : "Submit Survey"}
-            </button>
-
-          </div>
-
-        </form>
-
-      </main>
-    </div>
+          </form>
+        </div>
+      </div>
+    </>
   );
 }
 
 export default SurveyForm;
+

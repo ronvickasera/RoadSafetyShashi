@@ -62,7 +62,7 @@ CREATE TABLE IF NOT EXISTS survey_history (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
--- not working , correct below this
+-- B  ---not working , correct below this
 
 CREATE INDEX IF NOT EXISTS idx_users_phone ON users(phone);
 CREATE INDEX IF NOT EXISTS idx_surveys_status ON surveys(status);
@@ -92,7 +92,7 @@ FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
 
 
--- new 
+-- C--- new -- use this one
 
 -- ============================================================
 -- INDEXES
@@ -151,3 +151,45 @@ CREATE TRIGGER surveys_updated_at
 BEFORE UPDATE ON surveys
 FOR EACH ROW
 EXECUTE FUNCTION set_updated_at();
+
+
+-- D --Adding new fields in surveys table
+
+ALTER TABLE public.surveys
+ADD COLUMN IF NOT EXISTS length double precision,
+ADD COLUMN IF NOT EXISTS width double precision,
+ADD COLUMN IF NOT EXISTS depth double precision,
+ADD COLUMN IF NOT EXISTS volume double precision,
+ADD COLUMN IF NOT EXISTS road_type character varying(50),
+ADD COLUMN IF NOT EXISTS rate double precision,
+ADD COLUMN IF NOT EXISTS estimated_cost double precision;
+
+-- validation
+
+ALTER TABLE public.surveys
+ADD CONSTRAINT surveys_length_check
+CHECK (length IS NULL OR length > 0);
+
+ALTER TABLE public.surveys
+ADD CONSTRAINT surveys_width_check
+CHECK (width IS NULL OR width > 0);
+
+ALTER TABLE public.surveys
+ADD CONSTRAINT surveys_depth_check
+CHECK (depth IS NULL OR depth > 0);
+
+ALTER TABLE public.surveys
+ADD CONSTRAINT surveys_volume_check
+CHECK (volume IS NULL OR volume >= 0);
+
+ALTER TABLE public.surveys
+ADD CONSTRAINT surveys_rate_check
+CHECK (rate IS NULL OR rate >= 0);
+
+ALTER TABLE public.surveys
+ADD CONSTRAINT surveys_estimated_cost_check
+CHECK (estimated_cost IS NULL OR estimated_cost >= 0);
+
+
+
+
